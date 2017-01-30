@@ -1,5 +1,5 @@
-import { meteor } from 'meteor/meteor';
-import { accounts } from 'meteor/accounts-base';
+import { Meteor } from 'meteor/meteor';
+import { Accounts } from 'meteor/accounts-base';
 import { expect } from 'meteor/practicalmeteor:chai';
 
 function createUser(
