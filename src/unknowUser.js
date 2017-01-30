@@ -54,7 +54,7 @@ class UnknowUser {
         lockDuration = 1;
       }
       Meteor.setTimeout(
-        this.unlockAccount.bind(null, connection.clientAddress),
+        UnknowUser.unlockAccount.bind(null, connection.clientAddress),
         lockDuration,
       );
     });
