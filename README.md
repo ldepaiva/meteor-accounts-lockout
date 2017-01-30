@@ -48,7 +48,7 @@ If the `default` is nice to you, you can do that.
 (new AccountsLockout()).startup();
 ```
 
-You can overwrite passing an `object` as a paramenter.
+You can overwrite passing an `object` as argument.
 
 ```javascript
 (new AccountsLockout({
@@ -65,7 +65,7 @@ You can overwrite passing an `object` as a paramenter.
 })).startup();
 ```
 
-If you prefer you can pass a `function` as argument.
+If you prefer, you can pass a `function` as argument.
 
 ```javascript
 const knowUsersRules = (user) => {
@@ -87,13 +87,13 @@ const unknowUsersRules = (connection) => {
 };
 
 (new AccountsLockout({
-  knowUsers,
-  unknowUsers,
+  knowUsers: knowUsersRules,
+  unknowUsers: unknowUsersRules,
 })).startup();
 ```
 
-If you prefer you can user `Meteor.settings`. This case will overwrite the previous case (
-passing as arguments to `AccountsLockout` object).
+If you prefer, you can use `Meteor.settings`.
+It will overwrite any previous case.
 
 ```javascript
 "accounts-lockout": {
