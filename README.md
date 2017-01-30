@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/LucasAntoniassi/meteor-accounts-lockout.svg?branch=master)](https://travis-ci.org/LucasAntoniassi/meteor-accounts-lockout)
+
 # Meteor - Accounts - Lockout
 
 ## What it is
