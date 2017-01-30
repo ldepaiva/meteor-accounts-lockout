@@ -2,43 +2,17 @@
 /* eslint-disable func-names, no-underscore-dangle, no-unresolved */
 /* eslint-disable no-unused-expressions */
 
-import { Meteor } from 'meteor/meteor';
 import { Random } from 'meteor/random';
-import { Accounts } from 'meteor/accounts-base';
 
-import wait from './accountsLockout/wait';
-import spawn from './accountsLockout/spawn';
-import logOut from './accountsLockout/logOut';
-import testDone from './accountsLockout/testDone';
-import createUser from './accountsLockout/createUser';
-import AccountsLockout from '../../user/accountsLockout';
-import incorrectEmail from './accountsLockout/incorrectEmail';
-import tooManyAttempts from './accountsLockout/tooManyAttempts';
-import incorrectPassword from './accountsLockout/incorrectPassword';
-import tooManyAttemptsFromUnknowUser from './accountsLockout/tooManyAttemptsFromUnknowUser';
-
-Accounts._noConnectionCloseDelayForTest = true;
-
-if (Meteor.isServer) {
-  Accounts.removeDefaultRateLimit();
-}
-
-if (Meteor.isClient) {
-  Accounts._isolateLoginTokenForTest();
-}
-
-if (Meteor.isServer) {
-  const rulesToLockout = () => ({
-    failuresBeforeLockout: 2,
-    lockoutPeriod: 1,
-    failureWindow: 2,
-  });
-
-  (new AccountsLockout({
-    knowUsers: rulesToLockout,
-    unknowUsers: rulesToLockout,
-  })).startup();
-}
+import wait from './wait';
+import spawn from './spawn';
+import logOut from './logOut';
+import testDone from './testDone';
+import createUser from './createUser';
+import incorrectEmail from './incorrectEmail';
+import tooManyAttempts from './tooManyAttempts';
+import incorrectPassword from './incorrectPassword';
+import tooManyAttemptsFromUnknowUser from './tooManyAttemptsFromUnknowUser';
 
 describe('AccountsLockout', () => {
   describe('unknowUsers', () => {
@@ -64,7 +38,7 @@ describe('AccountsLockout', () => {
 
   describe('knowUsers', () => {
     it('should lock/unlock the user correctly', function (done) {
-      this.timeout(7000);
+      this.timeout(8000);
 
       spawn(function* () {
         const username = Random.id();

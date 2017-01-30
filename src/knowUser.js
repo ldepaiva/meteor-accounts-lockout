@@ -15,7 +15,7 @@ class KnowUser {
   }
 
   updateSettings() {
-    const settings = this.knowUsers();
+    const settings = KnowUser.knowUsers();
     if (settings) {
       settings.forEach(function ({ key, value }) {
         this.settings[key] = value;
@@ -47,7 +47,7 @@ class KnowUser {
     );
     const currentTime = Number(new Date());
     lockedAccountsCursor.forEach((user) => {
-      let lockDuration = this.unlockTime(user) - currentTime;
+      let lockDuration = KnowUser.unlockTime(user) - currentTime;
       if (lockDuration >= this.settings.lockoutPeriod) {
         lockDuration = this.settings.lockoutPeriod * 1000;
       }
@@ -55,19 +55,19 @@ class KnowUser {
         lockDuration = 1;
       }
       Meteor.setTimeout(
-        this.unlockAccount.bind(null, user._id),
+        KnowUser.unlockAccount.bind(null, user._id),
         lockDuration,
       );
     });
   }
 
   hookIntoAccounts() {
-    Accounts.validateLoginAttempt(this.validateLoginAttempt.bind(this));
-    Accounts.onLogin(this.onLogin.bind(this));
+    Accounts.validateLoginAttempt(KnowUser.validateLoginAttempt);
+    Accounts.onLogin(KnowUser.onLogin);
     Accounts.onLoginFailure(this.onLoginFailure.bind(this));
   }
 
-  validateLoginAttempt(loginInfo) {
+  static validateLoginAttempt(loginInfo) {
     // don't interrupt non-password logins
     if (loginInfo.type !== 'password') {
       return loginInfo.allowed;
@@ -76,9 +76,9 @@ class KnowUser {
       return loginInfo.allowed;
     }
     const currentTime = Number(new Date());
-    const unlockTime = this.unlockTime(loginInfo.user);
+    const unlockTime = KnowUser.unlockTime(loginInfo.user);
     if (unlockTime <= currentTime) {
-      this.unlockAccount(loginInfo.user._id);
+      KnowUser.unlockAccount(loginInfo.user._id);
       return loginInfo.allowed;
     }
     if (unlockTime > currentTime) {
@@ -124,12 +124,12 @@ class KnowUser {
     if (this.settings instanceof Function) {
       this.settings = this.settings(loginInfo.user);
     }
-    const unlockTime = this.unlockTime(loginInfo.user);
+    const unlockTime = KnowUser.unlockTime(loginInfo.user);
     if (unlockTime) {
       return;
     }
-    let failedAttempts = 1 + this.failedAttempts(loginInfo.user);
-    const lastFailedAttempt = this.lastFailedAttempt(loginInfo.user);
+    let failedAttempts = 1 + KnowUser.failedAttempts(loginInfo.user);
+    const lastFailedAttempt = KnowUser.lastFailedAttempt(loginInfo.user);
     const currentTime = Number(new Date());
     if ((currentTime - lastFailedAttempt) > (1000 * this.settings.failureWindow)) {
       failedAttempts = 1;
@@ -156,7 +156,7 @@ class KnowUser {
     };
     Meteor.users.update(query, data);
     Meteor.setTimeout(
-      this.unlockAccount.bind(null, loginInfo.user._id),
+      KnowUser.unlockAccount.bind(null, loginInfo.user._id),
       this.settings.lockoutPeriod * 1000,
     );
   }

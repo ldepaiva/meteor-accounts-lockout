@@ -14,7 +14,7 @@ class UnknowUser {
   }
 
   updateSettings() {
-    const settings = this.unknowUsers();
+    const settings = UnknowUser.unknowUsers();
     if (settings) {
       settings.forEach(function ({ key, value }) {
         this.settings[key] = value;
@@ -46,7 +46,7 @@ class UnknowUser {
     );
     const currentTime = Number(new Date());
     lockedAccountsCursor.forEach((connection) => {
-      let lockDuration = this.unlockTime(connection) - currentTime;
+      let lockDuration = UnknowUser.unlockTime(connection) - currentTime;
       if (lockDuration >= this.settings.lockoutPeriod) {
         lockDuration = this.settings.lockoutPeriod * 1000;
       }
@@ -61,12 +61,12 @@ class UnknowUser {
   }
 
   hookIntoAccounts() {
-    Accounts.validateLoginAttempt(this.validateLoginAttempt.bind(this));
-    Accounts.onLogin(this.onLogin.bind(this));
+    Accounts.validateLoginAttempt(UnknowUser.validateLoginAttempt.bind(this));
+    Accounts.onLogin(UnknowUser.onLogin.bind(this));
     Accounts.onLoginFailure(this.onLoginFailure.bind(this));
   }
 
-  validateLoginAttempt(loginInfo) {
+  static validateLoginAttempt(loginInfo) {
     // don't interrupt non-password logins
     if (loginInfo.type !== 'password') {
       return loginInfo.allowed;
@@ -75,9 +75,9 @@ class UnknowUser {
       return loginInfo.allowed;
     }
     const currentTime = Number(new Date());
-    const unlockTime = this.unlockTime(loginInfo.connection);
+    const unlockTime = UnknowUser.unlockTime(loginInfo.connection);
     if (unlockTime <= currentTime) {
-      this.unlockAccount(loginInfo.connection.clientAddress);
+      UnknowUser.unlockAccount(loginInfo.connection.clientAddress);
       return loginInfo.allowed;
     }
     if (unlockTime > currentTime) {
@@ -124,12 +124,12 @@ class UnknowUser {
     if (this.settings instanceof Function) {
       this.settings = this.settings(loginInfo.connection);
     }
-    const unlockTime = this.unlockTime(loginInfo.connection);
+    const unlockTime = UnknowUser.unlockTime(loginInfo.connection);
     if (unlockTime) {
       return;
     }
-    let failedAttempts = 1 + this.failedAttempts(loginInfo.connection);
-    const lastFailedAttempt = this.lastFailedAttempt(loginInfo.connection);
+    let failedAttempts = 1 + UnknowUser.failedAttempts(loginInfo.connection);
+    const lastFailedAttempt = UnknowUser.lastFailedAttempt(loginInfo.connection);
     const currentTime = Number(new Date());
     if ((currentTime - lastFailedAttempt) > (1000 * this.settings.failureWindow)) {
       failedAttempts = 1;
@@ -156,7 +156,7 @@ class UnknowUser {
     };
     AccountsLockoutCollection.upsert(query, data);
     Meteor.setTimeout(
-      this.unlockAccount.bind(null, clientAddress),
+      UnknowUser.unlockAccount.bind(null, clientAddress),
       this.settings.lockoutPeriod * 1000,
     );
   }
@@ -177,8 +177,8 @@ class UnknowUser {
     });
   }
 
-  unlockTime(connection) {
-    connection = this.findOneByConnection(connection);
+  static unlockTime(connection) {
+    connection = UnknowUser.findOneByConnection(connection);
     let unlockTime;
     try {
       unlockTime = connection.services['accounts-lockout'].unlockTime;
@@ -188,8 +188,8 @@ class UnknowUser {
     return unlockTime;
   }
 
-  failedAttempts(connection) {
-    connection = this.findOneByConnection(connection);
+  static failedAttempts(connection) {
+    connection = UnknowUser.findOneByConnection(connection);
     let failedAttempts;
     try {
       failedAttempts = connection.services['accounts-lockout'].failedAttempts;
@@ -199,8 +199,8 @@ class UnknowUser {
     return failedAttempts;
   }
 
-  lastFailedAttempt(connection) {
-    connection = this.findOneByConnection(connection);
+  static lastFailedAttempt(connection) {
+    connection = UnknowUser.findOneByConnection(connection);
     let lastFailedAttempt;
     try {
       lastFailedAttempt = connection.services['accounts-lockout'].lastFailedAttempt;

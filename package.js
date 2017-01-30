@@ -29,18 +29,20 @@ Package.onTest((api) => {
     'random',
   ]);
 
-  api.use('lucasantoniassi:meteor-accounts');
+  api.use('lucasantoniassi:accounts-lockout');
+
+  api.addFiles('./tests/accountsLockoutStartup.js');
 
   api.addFiles([
     './tests/accountsLockout.test.js',
-    './tests/createUser.js.test.js',
-    './tests/incorrectEmail.js.test.js',
-    './tests/incorrectPassword.js.test.js',
-    './tests/logOut.js.test.js',
-    './tests/spawn.js.test.js',
-    './tests/testDone.js.test.js',
-    './tests/tooManyAttempts.js.test.js',
-    './tests/tooManyAttemptsFromUnknowUser.js.test.js',
-    './tests/wait.js.test.js',
-  ]);
+    './tests/createUser.js',
+    './tests/incorrectEmail.js',
+    './tests/incorrectPassword.js',
+    './tests/logOut.js',
+    './tests/spawn.js',
+    './tests/testDone.js',
+    './tests/tooManyAttempts.js',
+    './tests/tooManyAttemptsFromUnknowUser.js',
+    './tests/wait.js',
+  ], 'client');
 });
