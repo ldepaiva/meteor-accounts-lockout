@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/LucasAntoniassi/meteor-accounts-lockout.svg?branch=master)](https://travis-ci.org/LucasAntoniassi/meteor-accounts-lockout)
+[![Code Climate](https://codeclimate.com/github/LucasAntoniassi/meteor-accounts-lockout/badges/gpa.svg)](https://codeclimate.com/github/LucasAntoniassi/meteor-accounts-lockout)
 
 # Meteor - Accounts - Lockout
 
