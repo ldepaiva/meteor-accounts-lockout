@@ -2,7 +2,7 @@
 
 Package.describe({
   name: 'lucasantoniassi:accounts-lockout',
-  version: '0.0.1',
+  version: '0.0.2',
   summary: 'Meteor package for locking user accounts and stopping brute force attacks',
   git: 'https://github.com/lucasantoniassi/meteor-accounts-lockout.git',
   documentation: 'README.md',
