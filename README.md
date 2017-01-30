@@ -20,14 +20,37 @@ import { AccountsLockout } from 'meteor/lucasantoniassi:accounts-lockout';
 
 ## How to use?
 
+Default settings:
+
+```javascript
+  "knowUsers": {
+    "failuresBeforeLockout": 3,
+    "lockoutPeriod": 60,
+    "failureWindow": 10
+  },
+  "unknowUsers": {
+    "failuresBeforeLockout": 3,
+    "lockoutPeriod": 60,
+    "failureWindow": 10
+  }
+```
+
 `knowUsers` are users where already belongs to your `Meteor.users` collections,
 these rules are applied if they attempt to login with an incorrect password but a know email.
 
 `unknowUsers` are users where not belongs to your `Meteor.users` collections,
 these rules are applied if they attempt to login with a unknow email.
 
+
+If the `default` is nice to you, you can do that.
+
 ```javascript
-// Default settings
+(new AccountsLockout()).startup();
+```
+
+You can overwrite passing an `object` as a paramenter.
+
+```javascript
 (new AccountsLockout({
   knowUsers: {
     failuresBeforeLockout: 3,
