@@ -1,0 +1,18 @@
+{
+  "name": "accounts-lockout",
+  "private": true,
+  "scripts": {
+    "lint": "eslint .",
+    "test": "npm run lint && spacejam test-packages ./ --driver-package=practicalmeteor:mocha-console-runner",
+    "test:watch": "meteor test-packages ./ --driver-package practicalmeteor:mocha",
+    "test:coverage": "npm run lint && spacejam test-packages ./ --coverage out_lcovonly  --driver-package practicalmeteor:mocha-console-runner"
+  },
+  "devDependencies": {
+    "spacejam": "https://github.com/serut/spacejam/tarball/windows-suppport-rc4",
+    "eslint": "^3.12.2",
+    "eslint-config-airbnb": "^13.0.0",
+    "eslint-plugin-import": "^2.1.0",
+    "eslint-plugin-jsx-a11y": "^2.2.3",
+    "eslint-plugin-react": "^6.6.0"
+  }
+}

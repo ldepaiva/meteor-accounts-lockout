@@ -1,0 +1,7 @@
+.meteor/local
+.meteor/meteorite
+.coverage
+.npm
+node_modules
+npm-debug.log
+settings.coverage.json
