@@ -9,6 +9,8 @@
 Seamless Meteor apps accounts protection from password brute-force attacks.
 Users won't notice it. Hackers shall not pass.
 
+![you-shall-not-pass](https://cloud.githubusercontent.com/assets/3399956/9023729/007dd2a2-38b1-11e5-807a-b81c6ce00c80.jpg)
+
 ## Installation
 
 ```
@@ -96,8 +98,7 @@ const unknowUsersRules = (connection) => {
 })).startup();
 ```
 
-If you prefer, you can use `Meteor.settings`.
-It will overwrite any previous case.
+If you prefer, you can use `Meteor.settings`. It will overwrite any previous case.
 
 ```javascript
 "accounts-lockout": {
