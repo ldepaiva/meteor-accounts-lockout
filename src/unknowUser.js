@@ -61,12 +61,12 @@ class UnknowUser {
   }
 
   hookIntoAccounts() {
-    Accounts.validateLoginAttempt(UnknowUser.validateLoginAttempt.bind(this));
-    Accounts.onLogin(UnknowUser.onLogin.bind(this));
+    Accounts.validateLoginAttempt(this.validateLoginAttempt.bind(this));
+    Accounts.onLogin(UnknowUser.onLogin);
     Accounts.onLoginFailure(this.onLoginFailure.bind(this));
   }
 
-  static validateLoginAttempt(loginInfo) {
+  validateLoginAttempt(loginInfo) {
     // don't interrupt non-password logins
     if (loginInfo.type !== 'password') {
       return loginInfo.allowed;
@@ -78,6 +78,7 @@ class UnknowUser {
     const unlockTime = UnknowUser.unlockTime(loginInfo.connection);
     if (unlockTime <= currentTime) {
       UnknowUser.unlockAccount(loginInfo.connection.clientAddress);
+      this.userNotFound(loginInfo);
       return loginInfo.allowed;
     }
     if (unlockTime > currentTime) {
@@ -88,11 +89,12 @@ class UnknowUser {
         403,
         'Too many attempts',
         JSON.stringify({
-          message: 'Wrong passwords were submitted too many times. Account is locked for a while.',
+          message: 'Wrong emails were submitted too many times. Account is locked for a while.',
           duration,
         }),
       );
     }
+    this.userNotFound(loginInfo);
     return loginInfo.allowed;
   }
 
@@ -158,6 +160,35 @@ class UnknowUser {
     Meteor.setTimeout(
       UnknowUser.unlockAccount.bind(null, clientAddress),
       this.settings.lockoutPeriod * 1000,
+    );
+  }
+
+  userNotFound(loginInfo) {
+    if (
+      !loginInfo.error ||
+      !loginInfo.connection ||
+      loginInfo.error.reason !== 'User not found'
+    ) {
+      return;
+    }
+
+    if (this.settings instanceof Function) {
+      this.settings = this.settings(loginInfo.connection);
+    }
+
+    const failedAttempts = 1 + UnknowUser.failedAttempts(loginInfo.connection);
+    const maxAttemptsAllowed = this.settings.failuresBeforeLockout;
+    const attemptsRemaining = maxAttemptsAllowed - failedAttempts;
+
+    throw new Meteor.Error(
+      403,
+      'User not found',
+      JSON.stringify({
+        message: 'User not found',
+        failedAttempts,
+        maxAttemptsAllowed,
+        attemptsRemaining,
+      }),
     );
   }
 

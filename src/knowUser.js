@@ -62,12 +62,12 @@ class KnowUser {
   }
 
   hookIntoAccounts() {
-    Accounts.validateLoginAttempt(KnowUser.validateLoginAttempt);
+    Accounts.validateLoginAttempt(this.validateLoginAttempt.bind(this));
     Accounts.onLogin(KnowUser.onLogin);
     Accounts.onLoginFailure(this.onLoginFailure.bind(this));
   }
 
-  static validateLoginAttempt(loginInfo) {
+  validateLoginAttempt(loginInfo) {
     // don't interrupt non-password logins
     if (loginInfo.type !== 'password') {
       return loginInfo.allowed;
@@ -79,6 +79,7 @@ class KnowUser {
     const unlockTime = KnowUser.unlockTime(loginInfo.user);
     if (unlockTime <= currentTime) {
       KnowUser.unlockAccount(loginInfo.user._id);
+      this.incorrectPassword(loginInfo);
       return loginInfo.allowed;
     }
     if (unlockTime > currentTime) {
@@ -94,6 +95,7 @@ class KnowUser {
         }),
       );
     }
+    this.incorrectPassword(loginInfo);
     return loginInfo.allowed;
   }
 
@@ -111,7 +113,6 @@ class KnowUser {
     };
     Meteor.users.update(query, data);
   }
-
 
   onLoginFailure(loginInfo) {
     if (loginInfo.error.reason !== 'Incorrect password') {
@@ -158,6 +159,35 @@ class KnowUser {
     Meteor.setTimeout(
       KnowUser.unlockAccount.bind(null, loginInfo.user._id),
       this.settings.lockoutPeriod * 1000,
+    );
+  }
+
+  incorrectPassword(loginInfo) {
+    if (
+      !loginInfo.error ||
+      !loginInfo.user ||
+      loginInfo.error.reason !== 'Incorrect password'
+    ) {
+      return;
+    }
+
+    if (this.settings instanceof Function) {
+      this.settings = this.settings(loginInfo.user);
+    }
+
+    const failedAttempts = 1 + KnowUser.failedAttempts(loginInfo.user);
+    const maxAttemptsAllowed = this.settings.failuresBeforeLockout;
+    const attemptsRemaining = maxAttemptsAllowed - failedAttempts;
+
+    throw new Meteor.Error(
+      403,
+      'Incorrect password',
+      JSON.stringify({
+        message: 'Incorrect password',
+        failedAttempts,
+        maxAttemptsAllowed,
+        attemptsRemaining,
+      }),
     );
   }
 

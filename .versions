@@ -32,10 +32,10 @@ http@1.1.8
 id-map@1.0.9
 jquery@1.11.10
 lmieulet:meteor-coverage@1.1.4
-local-test:lucasantoniassi:accounts-lockout@0.0.1
+local-test:lucasantoniassi:accounts-lockout@0.0.2
 localstorage@1.0.12
 logging@1.1.16
-lucasantoniassi:accounts-lockout@0.0.1
+lucasantoniassi:accounts-lockout@0.0.2
 meteor@1.6.0
 meteorhacks:picker@1.0.3
 minifier-js@1.1.13

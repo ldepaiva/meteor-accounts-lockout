@@ -38,7 +38,7 @@ describe('AccountsLockout', () => {
 
   describe('knowUsers', () => {
     it('should lock/unlock the user correctly', function (done) {
-      this.timeout(8000);
+      this.timeout(10000);
 
       spawn(function* () {
         const username = Random.id();
