@@ -8,8 +8,11 @@ class UnknowUser {
   }
 
   startup() {
-    this.updateSettings();
+    if (!(this.settings instanceof Function)) {
+      this.updateSettings();
+    }
     this.scheduleUnlocksForLockedAccounts();
+    UnknowUser.unlockAccountsIfLockoutAlreadyExpired();
     this.hookIntoAccounts();
   }
 
@@ -20,13 +23,26 @@ class UnknowUser {
         this.settings[key] = value;
       });
     }
-    if (this.settings.failuresBeforeLockout < 0) {
+    this.validateSettings();
+  }
+
+  validateSettings() {
+    if (
+      !this.settings.failuresBeforeLockout ||
+      this.settings.failuresBeforeLockout < 0
+    ) {
       throw new Error('"failuresBeforeLockout" is not positive integer');
     }
-    if (this.settings.lockoutPeriod < 0) {
+    if (
+      !this.settings.lockoutPeriod ||
+      this.settings.lockoutPeriod < 0
+    ) {
       throw new Error('"lockoutPeriod" is not positive integer');
     }
-    if (this.settings.failureWindow < 0) {
+    if (
+      !this.settings.failureWindow ||
+      this.settings.failureWindow < 0
+    ) {
       throw new Error('"failureWindow" is not positive integer');
     }
   }
@@ -60,42 +76,133 @@ class UnknowUser {
     });
   }
 
+  static unlockAccountsIfLockoutAlreadyExpired() {
+    const currentTime = Number(new Date());
+    const query = {
+      'services.accounts-lockout.unlockTime': {
+        $lt: currentTime,
+      },
+    };
+    const data = {
+      $unset: {
+        'services.accounts-lockout.unlockTime': 0,
+        'services.accounts-lockout.failedAttempts': 0,
+      },
+    };
+    AccountsLockoutCollection.update(query, data);
+  }
+
   hookIntoAccounts() {
     Accounts.validateLoginAttempt(this.validateLoginAttempt.bind(this));
     Accounts.onLogin(UnknowUser.onLogin);
-    Accounts.onLoginFailure(this.onLoginFailure.bind(this));
   }
 
   validateLoginAttempt(loginInfo) {
     // don't interrupt non-password logins
-    if (loginInfo.type !== 'password') {
+    if (
+      loginInfo.type !== 'password' ||
+      loginInfo.user !== undefined ||
+      loginInfo.error === undefined ||
+      loginInfo.error.reason !== 'User not found'
+    ) {
       return loginInfo.allowed;
     }
-    if (loginInfo.user) {
-      return loginInfo.allowed;
+
+    if (this.settings instanceof Function) {
+      this.settings = this.settings(loginInfo.connection);
+      this.validateSettings();
     }
-    const currentTime = Number(new Date());
+
+    const clientAddress = loginInfo.connection.clientAddress;
     const unlockTime = UnknowUser.unlockTime(loginInfo.connection);
-    if (unlockTime <= currentTime) {
-      UnknowUser.unlockAccount(loginInfo.connection.clientAddress);
-      this.userNotFound(loginInfo);
-      return loginInfo.allowed;
+    let failedAttempts = 1 + UnknowUser.failedAttempts(loginInfo.connection);
+    const firstFailedAttempt = UnknowUser.firstFailedAttempt(loginInfo.connection);
+    const currentTime = Number(new Date());
+
+    const canReset = (currentTime - firstFailedAttempt) > (1000 * this.settings.failureWindow);
+    if (canReset) {
+      failedAttempts = 1;
+      UnknowUser.resetAttempts(failedAttempts, clientAddress);
     }
+
+    const canIncrement = failedAttempts < this.settings.failuresBeforeLockout;
+    if (canIncrement) {
+      UnknowUser.incrementAttempts(failedAttempts, clientAddress);
+    }
+
+    const maxAttemptsAllowed = this.settings.failuresBeforeLockout;
+    const attemptsRemaining = maxAttemptsAllowed - failedAttempts;
     if (unlockTime > currentTime) {
       let duration = unlockTime - currentTime;
       duration = Math.ceil(duration / 1000);
       duration = duration > 1 ? duration : 1;
-      throw new Meteor.Error(
-        403,
-        'Too many attempts',
-        JSON.stringify({
-          message: 'Wrong emails were submitted too many times. Account is locked for a while.',
-          duration,
-        }),
-      );
+      UnknowUser.tooManyAttempts(duration);
     }
-    this.userNotFound(loginInfo);
-    return loginInfo.allowed;
+    if (failedAttempts === maxAttemptsAllowed) {
+      this.setNewUnlockTime(failedAttempts, clientAddress);
+
+      let duration = this.settings.lockoutPeriod;
+      duration = Math.ceil(duration);
+      duration = duration > 1 ? duration : 1;
+      return UnknowUser.tooManyAttempts(duration);
+    }
+    return UnknowUser.userNotFound(
+      failedAttempts,
+      maxAttemptsAllowed,
+      attemptsRemaining,
+    );
+  }
+
+  static resetAttempts(
+    failedAttempts,
+    clientAddress,
+  ) {
+    const currentTime = Number(new Date());
+    const query = { clientAddress };
+    const data = {
+      $set: {
+        'services.accounts-lockout.failedAttempts': failedAttempts,
+        'services.accounts-lockout.lastFailedAttempt': currentTime,
+        'services.accounts-lockout.firstFailedAttempt': currentTime,
+      },
+    };
+    AccountsLockoutCollection.upsert(query, data);
+  }
+
+  static incrementAttempts(
+    failedAttempts,
+    clientAddress,
+  ) {
+    const currentTime = Number(new Date());
+    const query = { clientAddress };
+    const data = {
+      $set: {
+        'services.accounts-lockout.failedAttempts': failedAttempts,
+        'services.accounts-lockout.lastFailedAttempt': currentTime,
+      },
+    };
+    AccountsLockoutCollection.upsert(query, data);
+  }
+
+  setNewUnlockTime(
+    failedAttempts,
+    clientAddress,
+  ) {
+    const currentTime = Number(new Date());
+    const newUnlockTime = (1000 * this.settings.lockoutPeriod) + currentTime;
+    const query = { clientAddress };
+    const data = {
+      $set: {
+        'services.accounts-lockout.failedAttempts': failedAttempts,
+        'services.accounts-lockout.lastFailedAttempt': currentTime,
+        'services.accounts-lockout.unlockTime': newUnlockTime,
+      },
+    };
+    AccountsLockoutCollection.upsert(query, data);
+    Meteor.setTimeout(
+      UnknowUser.unlockAccount.bind(null, clientAddress),
+      this.settings.lockoutPeriod * 1000,
+    );
   }
 
   static onLogin(loginInfo) {
@@ -113,73 +220,11 @@ class UnknowUser {
     AccountsLockoutCollection.update(query, data);
   }
 
-
-  onLoginFailure(loginInfo) {
-    // connection.clientAddress
-    if (loginInfo.error.reason === 'Incorrect password') {
-      return;
-    }
-    if (loginInfo.user) {
-      return;
-    }
-    const clientAddress = loginInfo.connection.clientAddress;
-    if (this.settings instanceof Function) {
-      this.settings = this.settings(loginInfo.connection);
-    }
-    const unlockTime = UnknowUser.unlockTime(loginInfo.connection);
-    if (unlockTime) {
-      return;
-    }
-    let failedAttempts = 1 + UnknowUser.failedAttempts(loginInfo.connection);
-    const lastFailedAttempt = UnknowUser.lastFailedAttempt(loginInfo.connection);
-    const currentTime = Number(new Date());
-    if ((currentTime - lastFailedAttempt) > (1000 * this.settings.failureWindow)) {
-      failedAttempts = 1;
-    }
-    if (failedAttempts < this.settings.failuresBeforeLockout) {
-      const query = { clientAddress };
-      const data = {
-        $set: {
-          'services.accounts-lockout.failedAttempts': failedAttempts,
-          'services.accounts-lockout.lastFailedAttempt': currentTime,
-        },
-      };
-      AccountsLockoutCollection.upsert(query, data);
-      return;
-    }
-    const newUnlockTime = (1000 * this.settings.lockoutPeriod) + currentTime;
-    const query = { clientAddress };
-    const data = {
-      $set: {
-        'services.accounts-lockout.failedAttempts': failedAttempts,
-        'services.accounts-lockout.lastFailedAttempt': currentTime,
-        'services.accounts-lockout.unlockTime': newUnlockTime,
-      },
-    };
-    AccountsLockoutCollection.upsert(query, data);
-    Meteor.setTimeout(
-      UnknowUser.unlockAccount.bind(null, clientAddress),
-      this.settings.lockoutPeriod * 1000,
-    );
-  }
-
-  userNotFound(loginInfo) {
-    if (
-      !loginInfo.error ||
-      !loginInfo.connection ||
-      loginInfo.error.reason !== 'User not found'
-    ) {
-      return;
-    }
-
-    if (this.settings instanceof Function) {
-      this.settings = this.settings(loginInfo.connection);
-    }
-
-    const failedAttempts = 1 + UnknowUser.failedAttempts(loginInfo.connection);
-    const maxAttemptsAllowed = this.settings.failuresBeforeLockout;
-    const attemptsRemaining = maxAttemptsAllowed - failedAttempts;
-
+  static userNotFound(
+    failedAttempts,
+    maxAttemptsAllowed,
+    attemptsRemaining,
+  ) {
     throw new Meteor.Error(
       403,
       'User not found',
@@ -192,6 +237,17 @@ class UnknowUser {
     );
   }
 
+  static tooManyAttempts(duration) {
+    throw new Meteor.Error(
+      403,
+      'Too many attempts',
+      JSON.stringify({
+        message: 'Wrong emails were submitted too many times. Account is locked for a while.',
+        duration,
+      }),
+    );
+  }
+
   static unknowUsers() {
     let unknowUsers;
     try {
@@ -199,7 +255,7 @@ class UnknowUser {
     } catch (e) {
       unknowUsers = false;
     }
-    return unknowUsers;
+    return unknowUsers || false;
   }
 
   static findOneByConnection(connection) {
@@ -216,7 +272,7 @@ class UnknowUser {
     } catch (e) {
       unlockTime = 0;
     }
-    return unlockTime;
+    return unlockTime || 0;
   }
 
   static failedAttempts(connection) {
@@ -227,7 +283,7 @@ class UnknowUser {
     } catch (e) {
       failedAttempts = 0;
     }
-    return failedAttempts;
+    return failedAttempts || 0;
   }
 
   static lastFailedAttempt(connection) {
@@ -238,7 +294,18 @@ class UnknowUser {
     } catch (e) {
       lastFailedAttempt = 0;
     }
-    return lastFailedAttempt;
+    return lastFailedAttempt || 0;
+  }
+
+  static firstFailedAttempt(connection) {
+    connection = UnknowUser.findOneByConnection(connection);
+    let firstFailedAttempt;
+    try {
+      firstFailedAttempt = connection.services['accounts-lockout'].firstFailedAttempt;
+    } catch (e) {
+      firstFailedAttempt = 0;
+    }
+    return firstFailedAttempt || 0;
   }
 
   static unlockAccount(clientAddress) {
@@ -254,3 +321,4 @@ class UnknowUser {
 }
 
 export default UnknowUser;
+

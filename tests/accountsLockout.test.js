@@ -21,13 +21,10 @@ describe('AccountsLockout', () => {
 
       spawn(function* () {
         yield incorrectEmail();
-        yield incorrectEmail();
         yield wait(2000);
-        yield incorrectEmail();
         yield incorrectEmail();
         yield tooManyAttemptsFromUnknowUser();
         yield wait(3000);
-        yield incorrectEmail();
         yield incorrectEmail();
         yield tooManyAttemptsFromUnknowUser();
         yield tooManyAttemptsFromUnknowUser();
@@ -50,10 +47,8 @@ describe('AccountsLockout', () => {
         yield incorrectPassword(email);
         yield wait(2000);
         yield incorrectPassword(email);
-        yield incorrectPassword(email);
         yield tooManyAttempts(email);
         yield wait(3000);
-        yield incorrectPassword(email);
         yield incorrectPassword(email);
         yield tooManyAttempts(email);
         yield tooManyAttempts(email);
