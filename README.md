@@ -24,7 +24,7 @@ meteor add lucasantoniassi:accounts-lockout
 import { AccountsLockout } from 'meteor/lucasantoniassi:accounts-lockout';
 ```
 
-## How to use?
+## How to use
 
 Default settings:
 
