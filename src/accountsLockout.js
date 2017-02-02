@@ -1,28 +1,28 @@
-import KnowUser from './knowUser';
-import UnknowUser from './unknowUser';
+import KnownUser from './knownUser';
+import UnknownUser from './unknownUser';
 
 class AccountsLockout {
   constructor({
-    knowUsers = {
+    knownUsers = {
       failuresBeforeLockout: 3,
       lockoutPeriod: 60,
       failureWindow: 15,
     },
-    unknowUsers = {
+    unknownUsers = {
       failuresBeforeLockout: 3,
       lockoutPeriod: 60,
       failureWindow: 15,
     },
   }) {
     this.settings = {
-      knowUsers,
-      unknowUsers,
+      knownUsers,
+      unknownUsers,
     };
   }
 
   startup() {
-    (new KnowUser(this.settings.knowUsers)).startup();
-    (new UnknowUser(this.settings.unknowUsers)).startup();
+    (new KnownUser(this.settings.knownUsers)).startup();
+    (new UnknownUser(this.settings.unknownUsers)).startup();
   }
 }
 

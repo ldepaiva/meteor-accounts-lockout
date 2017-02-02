@@ -12,10 +12,10 @@ import createUser from './createUser';
 import incorrectEmail from './incorrectEmail';
 import tooManyAttempts from './tooManyAttempts';
 import incorrectPassword from './incorrectPassword';
-import tooManyAttemptsFromUnknowUser from './tooManyAttemptsFromUnknowUser';
+import tooManyAttemptsFromUnknownUser from './tooManyAttemptsFromUnknownUser';
 
 describe('AccountsLockout', () => {
-  describe('unknowUsers', () => {
+  describe('unknownUsers', () => {
     it('should lock/unlock the user correctly', function (done) {
       this.timeout(7000);
 
@@ -23,17 +23,17 @@ describe('AccountsLockout', () => {
         yield incorrectEmail();
         yield wait(2000);
         yield incorrectEmail();
-        yield tooManyAttemptsFromUnknowUser();
+        yield tooManyAttemptsFromUnknownUser();
         yield wait(3000);
         yield incorrectEmail();
-        yield tooManyAttemptsFromUnknowUser();
-        yield tooManyAttemptsFromUnknowUser();
+        yield tooManyAttemptsFromUnknownUser();
+        yield tooManyAttemptsFromUnknownUser();
         yield testDone(done);
       });
     });
   });
 
-  describe('knowUsers', () => {
+  describe('knownUsers', () => {
     it('should lock/unlock the user correctly', function (done) {
       this.timeout(10000);
 

@@ -40,7 +40,7 @@ Package.onTest((api) => {
     './tests/spawn.js',
     './tests/testDone.js',
     './tests/tooManyAttempts.js',
-    './tests/tooManyAttemptsFromUnknowUser.js',
+    './tests/tooManyAttemptsFromUnknownUser.js',
     './tests/wait.js',
   ], 'client');
 });

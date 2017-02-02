@@ -29,23 +29,23 @@ import { AccountsLockout } from 'meteor/lucasantoniassi:accounts-lockout';
 Default settings:
 
 ```javascript
-  "knowUsers": {
+  "knownUsers": {
     "failuresBeforeLockout": 3, // positive integer greater than 0
     "lockoutPeriod": 60, // in seconds
     "failureWindow": 10 // in seconds
   },
-  "unknowUsers": {
+  "unknownUsers": {
     "failuresBeforeLockout": 3, // positive integer greater than 0
     "lockoutPeriod": 60, // in seconds
     "failureWindow": 10 // in seconds
   }
 ```
 
-`knowUsers` are users where already belongs to your `Meteor.users` collections,
+`knownUsers` are users where already belongs to your `Meteor.users` collections,
 these rules are applied if they attempt to login with an incorrect password but a know email.
 
-`unknowUsers` are users where **not** belongs to your `Meteor.users` collections,
-these rules are applied if they attempt to login with a unknow email.
+`unknownUsers` are users where **not** belongs to your `Meteor.users` collections,
+these rules are applied if they attempt to login with a unknown email.
 
 `failuresBeforeLockout` should be a positive integer greater than 0.
 
@@ -63,12 +63,12 @@ You can overwrite passing an `object` as argument.
 
 ```javascript
 (new AccountsLockout({
-  knowUsers: {
+  knownUsers: {
     failuresBeforeLockout: 3,
     lockoutPeriod: 60,
     failureWindow: 15,
   },
-  unknowUsers: {
+  unknownUsers: {
     failuresBeforeLockout: 3,
     lockoutPeriod: 60,
     failureWindow: 15,
@@ -79,7 +79,7 @@ You can overwrite passing an `object` as argument.
 If you prefer, you can pass a `function` as argument.
 
 ```javascript
-const knowUsersRules = (user) => {
+const knownUsersRules = (user) => {
   // apply some logic with this user
   return {
     failuresBeforeLockout,
@@ -88,7 +88,7 @@ const knowUsersRules = (user) => {
   };
 };
 
-const unknowUsersRules = (connection) => {
+const unknownUsersRules = (connection) => {
   // apply some logic with this connection
   return {
     failuresBeforeLockout,
@@ -98,8 +98,8 @@ const unknowUsersRules = (connection) => {
 };
 
 (new AccountsLockout({
-  knowUsers: knowUsersRules,
-  unknowUsers: unknowUsersRules,
+  knownUsers: knownUsersRules,
+  unknownUsers: unknownUsersRules,
 })).startup();
 ```
 
@@ -107,12 +107,12 @@ If you prefer, you can use `Meteor.settings`. It will overwrite any previous cas
 
 ```javascript
 "accounts-lockout": {
-  "knowUsers": {
+  "knownUsers": {
     "failuresBeforeLockout": 3,
     "lockoutPeriod": 60,
     "failureWindow": 10
   },
-  "unknowUsers": {
+  "unknownUsers": {
     "failuresBeforeLockout": 3,
     "lockoutPeriod": 60,
     "failureWindow": 10

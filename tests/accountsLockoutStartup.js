@@ -23,7 +23,7 @@ if (Meteor.isServer) {
   });
 
   (new AccountsLockout({
-    knowUsers: rulesToLockout,
-    unknowUsers: rulesToLockout,
+    knownUsers: rulesToLockout,
+    unknownUsers: rulesToLockout,
   })).startup();
 }
