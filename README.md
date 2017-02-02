@@ -31,22 +31,27 @@ Default settings:
 ```javascript
   "knowUsers": {
     "failuresBeforeLockout": 3,
-    "lockoutPeriod": 60,
-    "failureWindow": 10
+    "lockoutPeriod": 60, // in seconds
+    "failureWindow": 10 // in seconds
   },
   "unknowUsers": {
     "failuresBeforeLockout": 3,
-    "lockoutPeriod": 60,
-    "failureWindow": 10
+    "lockoutPeriod": 60, // in seconds
+    "failureWindow": 10 // in seconds
   }
 ```
 
 `knowUsers` are users where already belongs to your `Meteor.users` collections,
 these rules are applied if they attempt to login with an incorrect password but a know email.
 
-`unknowUsers` are users where not belongs to your `Meteor.users` collections,
+`unknowUsers` are users where *not* belongs to your `Meteor.users` collections,
 these rules are applied if they attempt to login with a unknow email.
 
+`failuresBeforeLockout` should be a positive integer greater than 0.
+
+`lockoutPeriod` should be in seconds.
+
+`failureWindow` should be in seconds.
 
 If the `default` is nice to you, you can do that.
 
