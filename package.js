@@ -11,18 +11,16 @@ Package.describe({
 Package.onUse((api) => {
   api.versionsFrom('1.4.2.3');
   api.use([
-    'accounts-base',
-    'accounts-password',
     'ecmascript',
+    'accounts-password',
   ]);
   api.mainModule('accounts-lockout.js');
 });
 
 Package.onTest((api) => {
   api.use([
-    'accounts-base',
-    'accounts-password',
     'ecmascript',
+    'accounts-password',
     'lmieulet:meteor-coverage@1.1.4',
     'practicalmeteor:chai',
     'practicalmeteor:mocha',
