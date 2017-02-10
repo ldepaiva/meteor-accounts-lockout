@@ -5,11 +5,12 @@ import { Accounts } from 'meteor/accounts-base';
 
 class KnownUser {
   constructor(settings) {
+    this.unchangedSettings = settings;
     this.settings = settings;
   }
 
   startup() {
-    if (!(this.settings instanceof Function)) {
+    if (!(this.unchangedSettings instanceof Function)) {
       this.updateSettings();
     }
     this.scheduleUnlocksForLockedAccounts();
@@ -110,8 +111,8 @@ class KnownUser {
       return loginInfo.allowed;
     }
 
-    if (this.settings instanceof Function) {
-      this.settings = this.settings(loginInfo.user);
+    if (this.unchangedSettings instanceof Function) {
+      this.settings = this.unchangedSettings(loginInfo.user);
       this.validateSettings();
     }
 

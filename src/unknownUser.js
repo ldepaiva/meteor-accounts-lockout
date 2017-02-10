@@ -4,11 +4,12 @@ import AccountsLockoutCollection from './accountsLockoutCollection';
 
 class UnknownUser {
   constructor(settings) {
+    this.unchangedSettings = settings;
     this.settings = settings;
   }
 
   startup() {
-    if (!(this.settings instanceof Function)) {
+    if (!(this.unchangedSettings instanceof Function)) {
       this.updateSettings();
     }
     this.scheduleUnlocksForLockedAccounts();
@@ -108,8 +109,8 @@ class UnknownUser {
       return loginInfo.allowed;
     }
 
-    if (this.settings instanceof Function) {
-      this.settings = this.settings(loginInfo.connection);
+    if (this.unchangedSettings instanceof Function) {
+      this.settings = this.unchangedSettings(loginInfo.connection);
       this.validateSettings();
     }
 
