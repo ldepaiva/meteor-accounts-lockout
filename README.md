@@ -1,8 +1,8 @@
+# Meteor - Accounts - Lockout
+
 [![Build Status](https://travis-ci.org/LucasAntoniassi/meteor-accounts-lockout.svg?branch=master)](https://travis-ci.org/LucasAntoniassi/meteor-accounts-lockout)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/8ce60fa7e2c24891b9bdfc3b65433d23)](https://www.codacy.com/app/lucasantoniassi/meteor-accounts-lockout?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=LucasAntoniassi/meteor-accounts-lockout&amp;utm_campaign=Badge_Grade)
 [![Code Climate](https://codeclimate.com/github/LucasAntoniassi/meteor-accounts-lockout/badges/gpa.svg)](https://codeclimate.com/github/LucasAntoniassi/meteor-accounts-lockout)
-
-# Meteor - Accounts - Lockout
 
 ## What it is
 
