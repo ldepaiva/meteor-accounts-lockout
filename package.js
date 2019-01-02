@@ -2,7 +2,7 @@
 
 Package.describe({
   name: 'lucasantoniassi:accounts-lockout',
-  version: '0.0.7',
+  version: '1.0.0',
   summary: 'Meteor package for locking user accounts and stopping brute force attacks',
   git: 'https://github.com/lucasantoniassi/meteor-accounts-lockout.git',
   documentation: 'README.md',
@@ -23,7 +23,7 @@ Package.onTest((api) => {
     'accounts-password',
     'lmieulet:meteor-coverage@1.1.4',
     'practicalmeteor:chai',
-    'practicalmeteor:mocha',
+    'cultofcoders:mocha',
     'random',
   ]);
 
@@ -43,4 +43,9 @@ Package.onTest((api) => {
     './tests/tooManyAttemptsFromUnknownUser.js',
     './tests/wait.js',
   ], 'client');
+
+  api.addFiles([
+    './tests/knownUser.test.js',
+    './tests/unknownUser.test.js',
+  ], 'server');
 });

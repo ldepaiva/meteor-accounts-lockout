@@ -3,9 +3,9 @@
   "private": true,
   "scripts": {
     "lint": "eslint .",
-    "test": "npm run lint && spacejam test-packages ./ --driver-package=practicalmeteor:mocha-console-runner",
-    "test:watch": "meteor test-packages ./ --driver-package practicalmeteor:mocha",
-    "test:coverage": "npm run lint && spacejam test-packages ./ --coverage out_lcovonly  --driver-package practicalmeteor:mocha-console-runner"
+    "test": "npm run lint && spacejam test-packages ./ --driver-package=cultofcoders:mocha",
+    "test:watch": "meteor test-packages ./ --driver-package cultofcoders:mocha",
+    "test:coverage": "npm run lint && spacejam test-packages ./ --coverage out_lcovonly  --driver-package cultofcoders:mocha"
   },
   "devDependencies": {
     "spacejam": "https://github.com/serut/spacejam/tarball/windows-suppport-rc4",

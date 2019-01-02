@@ -1,26 +1,31 @@
 import { Meteor } from 'meteor/meteor';
 import { Accounts } from 'meteor/accounts-base';
-import AccountsLockoutCollection from './accountsLockoutCollection';
+import _AccountsLockoutCollection from './accountsLockoutCollection';
 
 class UnknownUser {
-  constructor(settings) {
-    this.unchangedSettings = settings;
+  constructor(
+    settings,
+    {
+      AccountsLockoutCollection = _AccountsLockoutCollection,
+    } = {},
+  ) {
+    this.AccountsLockoutCollection = AccountsLockoutCollection;
     this.settings = settings;
   }
 
   startup() {
-    if (!(this.unchangedSettings instanceof Function)) {
+    if (!(this.settings instanceof Function)) {
       this.updateSettings();
     }
     this.scheduleUnlocksForLockedAccounts();
-    UnknownUser.unlockAccountsIfLockoutAlreadyExpired();
+    this.unlockAccountsIfLockoutAlreadyExpired();
     this.hookIntoAccounts();
   }
 
   updateSettings() {
     const settings = UnknownUser.unknownUsers();
     if (settings) {
-      settings.forEach(function ({ key, value }) {
+      settings.forEach(function updateSetting({ key, value }) {
         this.settings[key] = value;
       });
     }
@@ -49,7 +54,7 @@ class UnknownUser {
   }
 
   scheduleUnlocksForLockedAccounts() {
-    const lockedAccountsCursor = AccountsLockoutCollection.find(
+    const lockedAccountsCursor = this.AccountsLockoutCollection.find(
       {
         'services.accounts-lockout.unlockTime': {
           $gt: Number(new Date()),
@@ -63,7 +68,7 @@ class UnknownUser {
     );
     const currentTime = Number(new Date());
     lockedAccountsCursor.forEach((connection) => {
-      let lockDuration = UnknownUser.unlockTime(connection) - currentTime;
+      let lockDuration = this.unlockTime(connection) - currentTime;
       if (lockDuration >= this.settings.lockoutPeriod) {
         lockDuration = this.settings.lockoutPeriod * 1000;
       }
@@ -71,13 +76,13 @@ class UnknownUser {
         lockDuration = 1;
       }
       Meteor.setTimeout(
-        UnknownUser.unlockAccount.bind(null, connection.clientAddress),
+        this.unlockAccount.bind(this, connection.clientAddress),
         lockDuration,
       );
     });
   }
 
-  static unlockAccountsIfLockoutAlreadyExpired() {
+  unlockAccountsIfLockoutAlreadyExpired() {
     const currentTime = Number(new Date());
     const query = {
       'services.accounts-lockout.unlockTime': {
@@ -90,12 +95,12 @@ class UnknownUser {
         'services.accounts-lockout.failedAttempts': 0,
       },
     };
-    AccountsLockoutCollection.update(query, data);
+    this.AccountsLockoutCollection.update(query, data);
   }
 
   hookIntoAccounts() {
     Accounts.validateLoginAttempt(this.validateLoginAttempt.bind(this));
-    Accounts.onLogin(UnknownUser.onLogin);
+    Accounts.onLogin(this.onLogin.bind(this));
   }
 
   validateLoginAttempt(loginInfo) {
@@ -109,26 +114,26 @@ class UnknownUser {
       return loginInfo.allowed;
     }
 
-    if (this.unchangedSettings instanceof Function) {
-      this.settings = this.unchangedSettings(loginInfo.connection);
+    if (this.settings instanceof Function) {
+      this.settings = this.settings(loginInfo.connection);
       this.validateSettings();
     }
 
     const clientAddress = loginInfo.connection.clientAddress;
-    const unlockTime = UnknownUser.unlockTime(loginInfo.connection);
-    let failedAttempts = 1 + UnknownUser.failedAttempts(loginInfo.connection);
-    const firstFailedAttempt = UnknownUser.firstFailedAttempt(loginInfo.connection);
+    const unlockTime = this.unlockTime(loginInfo.connection);
+    let failedAttempts = 1 + this.failedAttempts(loginInfo.connection);
+    const firstFailedAttempt = this.firstFailedAttempt(loginInfo.connection);
     const currentTime = Number(new Date());
 
     const canReset = (currentTime - firstFailedAttempt) > (1000 * this.settings.failureWindow);
     if (canReset) {
       failedAttempts = 1;
-      UnknownUser.resetAttempts(failedAttempts, clientAddress);
+      this.resetAttempts(failedAttempts, clientAddress);
     }
 
     const canIncrement = failedAttempts < this.settings.failuresBeforeLockout;
     if (canIncrement) {
-      UnknownUser.incrementAttempts(failedAttempts, clientAddress);
+      this.incrementAttempts(failedAttempts, clientAddress);
     }
 
     const maxAttemptsAllowed = this.settings.failuresBeforeLockout;
@@ -154,7 +159,7 @@ class UnknownUser {
     );
   }
 
-  static resetAttempts(
+  resetAttempts(
     failedAttempts,
     clientAddress,
   ) {
@@ -167,10 +172,10 @@ class UnknownUser {
         'services.accounts-lockout.firstFailedAttempt': currentTime,
       },
     };
-    AccountsLockoutCollection.upsert(query, data);
+    this.AccountsLockoutCollection.upsert(query, data);
   }
 
-  static incrementAttempts(
+  incrementAttempts(
     failedAttempts,
     clientAddress,
   ) {
@@ -182,7 +187,7 @@ class UnknownUser {
         'services.accounts-lockout.lastFailedAttempt': currentTime,
       },
     };
-    AccountsLockoutCollection.upsert(query, data);
+    this.AccountsLockoutCollection.upsert(query, data);
   }
 
   setNewUnlockTime(
@@ -199,14 +204,14 @@ class UnknownUser {
         'services.accounts-lockout.unlockTime': newUnlockTime,
       },
     };
-    AccountsLockoutCollection.upsert(query, data);
+    this.AccountsLockoutCollection.upsert(query, data);
     Meteor.setTimeout(
-      UnknownUser.unlockAccount.bind(null, clientAddress),
+      this.unlockAccount.bind(this, clientAddress),
       this.settings.lockoutPeriod * 1000,
     );
   }
 
-  static onLogin(loginInfo) {
+  onLogin(loginInfo) {
     if (loginInfo.type !== 'password') {
       return;
     }
@@ -218,7 +223,7 @@ class UnknownUser {
         'services.accounts-lockout.failedAttempts': 0,
       },
     };
-    AccountsLockoutCollection.update(query, data);
+    this.AccountsLockoutCollection.update(query, data);
   }
 
   static userNotFound(
@@ -259,14 +264,14 @@ class UnknownUser {
     return unknownUsers || false;
   }
 
-  static findOneByConnection(connection) {
-    return AccountsLockoutCollection.findOne({
+  findOneByConnection(connection) {
+    return this.AccountsLockoutCollection.findOne({
       clientAddress: connection.clientAddress,
     });
   }
 
-  static unlockTime(connection) {
-    connection = UnknownUser.findOneByConnection(connection);
+  unlockTime(connection) {
+    connection = this.findOneByConnection(connection);
     let unlockTime;
     try {
       unlockTime = connection.services['accounts-lockout'].unlockTime;
@@ -276,8 +281,8 @@ class UnknownUser {
     return unlockTime || 0;
   }
 
-  static failedAttempts(connection) {
-    connection = UnknownUser.findOneByConnection(connection);
+  failedAttempts(connection) {
+    connection = this.findOneByConnection(connection);
     let failedAttempts;
     try {
       failedAttempts = connection.services['accounts-lockout'].failedAttempts;
@@ -287,8 +292,8 @@ class UnknownUser {
     return failedAttempts || 0;
   }
 
-  static lastFailedAttempt(connection) {
-    connection = UnknownUser.findOneByConnection(connection);
+  lastFailedAttempt(connection) {
+    connection = this.findOneByConnection(connection);
     let lastFailedAttempt;
     try {
       lastFailedAttempt = connection.services['accounts-lockout'].lastFailedAttempt;
@@ -298,8 +303,8 @@ class UnknownUser {
     return lastFailedAttempt || 0;
   }
 
-  static firstFailedAttempt(connection) {
-    connection = UnknownUser.findOneByConnection(connection);
+  firstFailedAttempt(connection) {
+    connection = this.findOneByConnection(connection);
     let firstFailedAttempt;
     try {
       firstFailedAttempt = connection.services['accounts-lockout'].firstFailedAttempt;
@@ -309,7 +314,7 @@ class UnknownUser {
     return firstFailedAttempt || 0;
   }
 
-  static unlockAccount(clientAddress) {
+  unlockAccount(clientAddress) {
     const query = { clientAddress };
     const data = {
       $unset: {
@@ -317,9 +322,8 @@ class UnknownUser {
         'services.accounts-lockout.failedAttempts': 0,
       },
     };
-    AccountsLockoutCollection.update(query, data);
+    this.AccountsLockoutCollection.update(query, data);
   }
 }
 
 export default UnknownUser;
-

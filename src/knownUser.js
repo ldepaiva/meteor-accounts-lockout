@@ -21,7 +21,7 @@ class KnownUser {
   updateSettings() {
     const settings = KnownUser.knownUsers();
     if (settings) {
-      settings.forEach(function ({ key, value }) {
+      settings.forEach(function updateSetting({ key, value }) {
         this.settings[key] = value;
       });
     }
@@ -101,13 +101,19 @@ class KnownUser {
 
 
   validateLoginAttempt(loginInfo) {
-    // don't interrupt non-password logins
     if (
+      // don't interrupt non-password logins
       loginInfo.type !== 'password' ||
       loginInfo.user === undefined ||
-      loginInfo.error === undefined ||
-      loginInfo.error.reason !== 'Incorrect password'
+      // Don't handle errors unless they are due to incorrect password
+      (loginInfo.error !== undefined && loginInfo.error.reason !== 'Incorrect password')
     ) {
+      return loginInfo.allowed;
+    }
+
+    // If there was no login error and the account is NOT locked, don't interrupt
+    const unlockTime = KnownUser.unlockTime(loginInfo.user);
+    if (loginInfo.error === undefined && unlockTime === 0) {
       return loginInfo.allowed;
     }
 
@@ -117,7 +123,6 @@ class KnownUser {
     }
 
     const userId = loginInfo.user._id;
-    const unlockTime = KnownUser.unlockTime(loginInfo.user);
     let failedAttempts = 1 + KnownUser.failedAttempts(loginInfo.user);
     const firstFailedAttempt = KnownUser.firstFailedAttempt(loginInfo.user);
     const currentTime = Number(new Date());
@@ -314,4 +319,3 @@ class KnownUser {
 }
 
 export default KnownUser;
-
