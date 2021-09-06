@@ -8,7 +8,7 @@
     "test:coverage": "npm run lint && spacejam test-packages ./ --coverage --driver-package cultofcoders:mocha"
   },
   "devDependencies": {
-    "spacejam": "https://github.com/serut/spacejam/tarball/windows-suppport-rc4",
+    "@mihon/spacejam": "^1.6.4",
     "eslint": "^3.12.2",
     "eslint-config-airbnb": "^13.0.0",
     "eslint-plugin-import": "^2.1.0",
